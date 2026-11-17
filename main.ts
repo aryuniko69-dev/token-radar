@@ -26,7 +26,7 @@ const TEXT_MAX_BYTES = 65_536;
 const SCREENSHOT_CAPS = { max: 4, max_bytes: 524_288 };
 const IMAGE_NAME = /^[A-Za-z0-9_][A-Za-z0-9._-]{0,127}$/;
 
-/** --name <value> out of the arguments, or the fallback. */
+/** --name <value> (or the --name=<value> form) out of the arguments, else the fallback. Pass --output to override the default below. */
 function arg(name: string, fallback: string): string {
   const at = process.argv.indexOf(`--${name}`);
   if (at >= 0 && at + 1 < process.argv.length) return process.argv[at + 1]!;
@@ -82,7 +82,8 @@ for (const name of shots) {
   }
 }
 
-// The dossier is written last: the scorer rebuilds it from this /output and compares bytes.
+// The dossier is written last: the scorer rebuilds it from this /output and compares bytes, so the
+// caps passed here must match reference/gate.json exactly.
 writeFileSync(join(out, 'dossier.json'), buildDossier(out, { text_max_bytes: TEXT_MAX_BYTES, screenshots: SCREENSHOT_CAPS, dashboard: { max_files: 400, max_bytes: 4_194_304 } }));
 
 process.stdout.write(

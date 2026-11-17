@@ -1,7 +1,7 @@
 // Token Radar's dark radar dashboard. It reads window.RADAR (written beside dashboard/ by main.ts)
 // and renders the ranked board, search, category chips, sortable columns, a per-protocol detail
-// drawer with the model's inputs, a risk panel and an SVG sparkline drawn from the snapshot figures.
-// No network: every byte it shows is in data.js.
+// drawer with the model's inputs, a risk panel and a factor sparkline drawn from the snapshot figures.
+// No network: every byte it shows is in data.js, which main.ts writes from the same board.
 (function () {
   'use strict';
 
@@ -42,6 +42,8 @@
     return m[category || 'Other'] || DATA.model.default_category_mult;
   }
 
+  // A tiny element builder: attrs set class/text/html/listeners/attributes; extra args are children
+  // (null and undefined skipped, arrays flattened, strings turned into text nodes).
   function el(tag, attrs) {
     var node = document.createElement(tag);
     if (attrs) {
@@ -228,6 +230,7 @@
     );
   }
 
+  // State lives in the URL hash too, so a filtered or selected view survives a reload and a share.
   function readHash() {
     var hash = window.location.hash.replace(/^#/, '');
     if (!hash) return;
@@ -263,6 +266,7 @@
       if (key === 'name') { av = a.name.toLowerCase(); bv = b.name.toLowerCase(); }
       else if (key === 'tvl') { av = a.tvl_usd; bv = b.tvl_usd; }
       else if (key === 'growth') { av = a.change_7d === null ? -Infinity : a.change_7d; bv = b.change_7d === null ? -Infinity : b.change_7d; }
+      // Missing and unknown ages sort last (Infinity), so unknowns never climb a ranking on nothing.
       else if (key === 'age') { av = a.age_days === null ? Infinity : a.age_days; bv = b.age_days === null ? Infinity : b.age_days; }
       else if (key === 'rank') { av = a.rank; bv = b.rank; }
       else { av = a.implied_value_usd; bv = b.implied_value_usd; }
@@ -506,6 +510,7 @@
 
   readHash();
   render();
+  // Escape closes the drawer from anywhere on the page, matching the dialog's own behavior.
   window.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && dialog.open) dialog.close();
   });

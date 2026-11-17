@@ -1,5 +1,5 @@
 /* Token Radar's dark radar theme: a deep green-black canvas, a phosphor accent, hairlines and
-   monospace numerals. Five palette values, two radii, two families are the whole style. */
+   monospace numerals. A small palette, two radii and two families are the whole style. */
 :root {
   --canvas: #0a0f0d;
   --surface: #101815;
@@ -37,6 +37,8 @@ p { margin: 0; }
 button, input, select { font: inherit; color: inherit; }
 button { cursor: pointer; }
 a { color: var(--accent); }
+
+/* Keyboard users land here first: the skip link parks off-canvas until it takes focus. */
 .skip { position: absolute; left: -9999px; top: 0; padding: var(--step-2) var(--step-4);
   background: var(--surface); border: 1px solid var(--border); z-index: 20; }
 .skip:focus { left: var(--step-4); top: var(--step-4); }
@@ -132,6 +134,7 @@ tr:nth-child(-n+3) .rankcell { color: var(--accent); font-weight: 700; }
   border-radius: var(--radius-control); background: var(--surface); }
 .button.primary { background: var(--accent); border-color: var(--accent); color: #06231a; font-weight: 600; }
 
+/* The detail drawer: a sliding panel over the board, not a centred modal. */
 .detail { position: fixed; top: 0; right: 0; bottom: 0; width: min(560px, 94vw); z-index: 10;
   background: var(--surface); border-left: 1px solid var(--border); padding: var(--step-5);
   overflow-y: auto; }

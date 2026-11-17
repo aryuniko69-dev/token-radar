@@ -6,16 +6,15 @@
 // snapshot's live-token protocols are kept apart and shown with the market's own values, never mixed
 // into the ranked board.
 //
-// Implied value follows only from the snapshot's own figures, in five factors:
+// Implied value follows only from the snapshot's own figures, in four factors:
 //
-//   base      = tvl_usd x BASE_MULTIPLE                       the pool a token draws from
-//   growth    = clamp(change_7d, FLOOR, CAP) x GROWTH_WEIGHT   seven-day momentum
-//   trend     = ramp over TVL growth percentile within the snapshot
+//   base      = tvl_usd x base_multiple                        the pool a token draws from
+//   growth    = 1 + clamp(change_7d, floor, cap)/100 x growth_weight   seven-day momentum
 //   age       = scarcity of a long no-token run: the rarer the age, the higher the multiple
 //   category  = median mcap/tvl of live protocols in the same category, measured from the
-//               snapshot itself (see categoryMultiplier), clamped; unknown category: DEFAULT_CAT_MULT
+//               snapshot itself (see categoryMultipliers), clamped; unknown category: default
 //
-//   implied   = max(1, round(base x (1 + growth) x trendMult x ageMult x catMult))
+//   implied   = max(1, round(base x growth x age x category))
 //
 // No protocol name is ever special-cased: the same function scores every row, and every constant the
 // category factor uses was measured from the snapshot's own live protocols.
@@ -166,12 +165,15 @@ export class SnapshotError extends Error {
 
 const DAY_MS = 86_400_000;
 
+/** Four decimal places: every multiplier the board and the page carry is rounded the same way. */
+const round4 = (n: number): number => Math.round(n * 1e4) / 1e4;
+
 /** A finite number, else `fallback`. */
 function finite(value: unknown, fallback: number): number {
   return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
 }
 
-/** A whole day count from `from` to `to`, clamped at zero; null when either date is absent or bad. */
+/** A whole day count from `asOf` back to `listedAt` (UTC midnight to UTC midnight), clamped at zero; null when either date is absent or bad. */
 export function ageDays(asOf: string, listedAt: string | null): number | null {
   if (listedAt === null) return null;
   const a = Date.parse(`${asOf}T00:00:00Z`);
@@ -195,6 +197,7 @@ export function categoryMultipliers(snapshot: Snapshot, model: ModelConstants = 
   }
   const mults: Record<string, number> = {};
   for (const [key, list] of Object.entries(ratios)) {
+    // Fewer than three live protocols: the median says too little about the sector to score with it.
     if (list.length < 3) continue;
     const sorted = list.slice().sort((a, b) => a - b);
     const mid = Math.floor(sorted.length / 2);
@@ -314,8 +317,6 @@ export function buildBoard(snapshot: Snapshot, model: ModelConstants = MODEL, mu
   }));
 }
 
-const round4 = (n: number): number => Math.round(n * 1e4) / 1e4;
-
 /** A step as one string: its action, then its cost and time, within the gate's 20..600 characters. */
 export function stepText(step: FarmStep): string {
   let s = `${step.text} Cost: ${step.cost}. Time: ${step.time}.`;
@@ -425,7 +426,7 @@ function actionsFor(p: SnapshotProtocol, capital: number, chain: string): string
   ];
 }
 
-/** The full farm plan: eight to ten concrete steps, each with a dollar cost and a time estimate. */
+/** The full farm plan: nine concrete steps, each with a dollar cost and a time estimate. */
 export function farmSteps(p: SnapshotProtocol, age: number | null): FarmStep[] {
   const chain = chainOf(p);
   const capital = capitalFor(p);
